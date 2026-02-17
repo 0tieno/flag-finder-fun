@@ -1,0 +1,80 @@
+# ============================================================================
+# Docker Compose Configuration
+# ============================================================================
+# Docker Compose simplifies running Docker containers
+# Instead of long "docker run" commands, define everything in this YAML file
+# Then use "docker compose up" to start everything
+
+# services: Define the containers (services) that make up your application
+services:
+  
+  # app: Name of this service (you can have multiple services)
+  # You can reference this by name in Docker commands: "docker compose logs app"
+  app:
+    
+    # build: Instructions for building the Docker image
+    build:
+      # context: The build context (where Docker looks for files)
+      # "." means current directory (where docker-compose.yml is located)
+      context: .
+      
+      # dockerfile: The name of the Dockerfile to use
+      # Default is "Dockerfile", but you can specify alternative names
+      dockerfile: Dockerfile
+      
+      # target: Which stage of multi-stage build to build to
+      # Our Dockerfile has "builder" and "production" stages
+      # This tells Docker to build up to and including the "production" stage
+      target: production
+    
+    # image: Tag the built image with this name
+    # "latest" is a convention meaning "most recent version"
+    # You can use version tags like "v1.0.0" for production
+    image: flag-finder-fun:latest
+    
+    # container_name: Custom name for the running container
+    # Without this, Docker Compose generates a name like "project_app_1"
+    # This makes it easier to identify: "docker logs flag-finder-fun"
+    container_name: flag-finder-fun
+    
+    # ports: Map ports from host to container
+    # Format: "HOST_PORT:CONTAINER_PORT"
+    # "3000:8080" means:
+    #   - Container listens on port 8080 (as defined in Dockerfile EXPOSE)
+    #   - Host machine maps this to port 3000
+    #   - Access app at http://localhost:3000
+    ports:
+      - "3000:8080"
+    
+    # restart: Container restart policy
+    # unless-stopped: Always restart unless manually stopped
+    # Other options: "no", "always", "on-failure"
+    # Ensures container starts automatically after system reboot
+    restart: unless-stopped
+    
+    # environment: Environment variables passed to the container
+    # These are available inside the container at runtime
+    # NODE_ENV=production: Tells the app it's running in production mode
+    environment:
+      - NODE_ENV=production
+    
+    # healthcheck: Defines how Docker checks if container is healthy
+    # Overrides HEALTHCHECK in Dockerfile (optional)
+    healthcheck:
+      # test: Command to run to check health
+      # Array format: ["CMD", "command", "arg1", "arg2"]
+      # wget checks if nginx is responding on port 8080
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      
+      # interval: Time between health checks (30 seconds)
+      interval: 30s
+      
+      # timeout: Max time to wait for health check to complete
+      timeout: 3s
+      
+      # start_period: Grace period before health checks start
+      # Gives the app time to initialize
+      start_period: 5s
+      
+      # retries: Number of consecutive failures before marking unhealthy
+      retries: 3
